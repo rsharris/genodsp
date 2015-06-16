@@ -119,7 +119,7 @@ void op_percentile_usage (char* name, FILE* f, char* indent)
 	fprintf (f, "%sbecause the operation reorders the signal (bringing the selected values to\n",    indent);
 	//             3456789-123456789-123456789-123456789-123456789-123456789-123456789-123456789
 	fprintf (f, "%sthe front), then sorts them, and a subsequent call 'sees' a different sample\n",  indent);
-	fprintf (f, "of the signal (with potential for bias).\n",                                        indent);
+	fprintf (f, "%sof the signal (with potential for bias).\n",                                      indent);
 	}
 
 
