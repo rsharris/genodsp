@@ -918,7 +918,7 @@ void op_dilate_apply
 			else
 				{
 				rightIx = gapStartIx + rightDilation;
-				leftIx  = ix - leftDilation;
+				leftIx  = (ix <= leftDilation)? 0 : ix - leftDilation;
 
 				if (op->debug) fprintf (stderr, "  narrowed gap is %u..%u\n", rightIx, leftIx);
 

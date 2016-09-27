@@ -64,7 +64,7 @@ global spec** chromsSorted;
 
 // dsp operator functions
 //
-// each operator consists of four functions
+// each operator consists of five functions
 //	short: short descriptive text (one line)
 //	usage: long descriptive text
 //	parse: parse command line arguments and allocate control record
@@ -94,7 +94,7 @@ void          funcName##_apply opfuncargs_apply;
 
 // linked list for dsp operators
 //
-// the list will actually contain a mixture of records fom different operators;
+// the list will actually contain a mixture of records for different operators;
 // each operator should define its own type (essentially a subtype of dspop), a
 // struct with dspop as the first element
 
@@ -265,7 +265,6 @@ int      valtype_ascending      (const void* v1, const void* v2);
 //	op_free().
 //
 //----------
-
 
 //----------
 //
