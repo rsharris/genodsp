@@ -18,8 +18,8 @@ char* programName = "genodsp";
 
 #define programVersionMajor    "0"
 #define programVersionMinor    "0"
-#define programVersionSubMinor "3+"
-#define programRevisionDate    "20150515+"
+#define programVersionSubMinor "4"
+#define programRevisionDate    "20190430"
 
 // dsp operators
 
