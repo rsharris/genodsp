@@ -664,7 +664,8 @@ void op_percentile_apply
 			set_named_global    (varName, pVal);
 
 			if (op->reportForBash)
-				fprintf (stdout, "%s=" valtypeFmtPrec "\n", varName, valPrecision, pVal);
+				fprintf (stdout, "%s=" valtypeFmtPrec " # bash command\n",
+				                 varName, valPrecision, pVal);
 			else if (!op->quiet)
 				{
 				fprintf (stderr, "percentile %.3f is ", pPct);
