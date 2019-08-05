@@ -51,6 +51,7 @@ typedef struct dspop_percentile
 	valtype		minAllowed;
 	valtype		maxAllowed;
 	int			valPrecision;
+	int			reportForBash;
 	int			quiet;
 	int			debug;
 	int			debugShowIndex;
@@ -104,6 +105,8 @@ void op_percentile_usage (char* name, FILE* f, char* indent)
 	fprintf (f, "%s  --map=<filename>         write percentile values to a file, suitable for\n",    indent);
 	fprintf (f, "%s                           use as a mapping file\n",                              indent);
 	fprintf (f, "%s  --quiet                  don't report percentile values to the console\n",      indent);
+	fprintf (f, "%s  --report:bash            report percentile values to stdout in a form\n",       indent);
+	fprintf (f, "%s                           suitable for defining a bash environment varirable\n", indent);
 	fprintf (f, "%s\n", indent);
 	fprintf (f, "%sIn addition to reporting percentiles to stderr, this function sets a named\n",    indent);
 	fprintf (f, "%svariable for each percentile reported. The name is of the form percentile<p>\n",  indent);
@@ -151,6 +154,7 @@ dspop* op_percentile_parse (char* name, int _argc, char** _argv)
 	op->minAllowed      = -valtypeMax;
 	op->maxAllowed      =  valtypeMax;
 	op->valPrecision    = (int) get_named_global ("valPrecision",  0);
+	op->reportForBash   = false;
 	op->quiet           = false;
 	op->debug           = false;
 	op->debugShowIndex  = false;
@@ -239,6 +243,14 @@ dspop* op_percentile_parse (char* name, int _argc, char** _argv)
 			op->mapFilename = copy_string (argVal);
 			goto next_arg;
 			}
+
+		// --report:bash
+
+		if ((strcmp (arg, "--report:bash") == 0)
+		 || (strcmp (arg, "--bash")        == 0))
+			{ op->reportForBash = true;  goto next_arg; }
+
+		// --quiet
 
 		if ((strcmp (arg, "--quiet")  == 0)
 		 || (strcmp (arg, "--silent") == 0))
@@ -344,6 +356,9 @@ dspop* op_percentile_parse (char* name, int _argc, char** _argv)
 		}
 
 	if (!haveRange) goto range_missing;
+
+	if ((op->reportForBash) && (op->quiet))
+		chastise ("[%s] Can't use both --report:bash and --quiet\n", name);
 
 	return (dspop*) op;
 
@@ -648,12 +663,15 @@ void op_percentile_apply
 			set_percentile_name (varName, percentileNext);
 			set_named_global    (varName, pVal);
 
-			if (!op->quiet)
+			if (op->reportForBash)
+				fprintf (stdout, "%s=" valtypeFmtPrec "\n", varName, valPrecision, pVal);
+			else if (!op->quiet)
 				{
 				fprintf (stderr, "percentile %.3f is ", pPct);
 				if (op->debugShowIndex) fprintf (stderr, "[%u] ", pIx);
 				fprintf (stderr, valtypeFmtPrec "\n", valPrecision, pVal);
 				}
+
 			if (mapF != NULL)
 				fprintf (mapF, valtypeFmtPrec " %.3f\n", valPrecision, pVal, pPct);
 
