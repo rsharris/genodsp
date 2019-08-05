@@ -140,6 +140,7 @@ dspinfo dspTable[] =
 	 dspinforecord("masknot"       , op_mask_not)       ,
 	 dspinfoalias ("mask_not")                          ,
 	 dspinforecord("clip"          , op_clip)           ,
+	 dspinforecord("erase"         , op_erase)          ,
 	 dspinforecord("binarize"      , op_binarize)       ,
 	 dspinforecord("or"            , op_or)             ,
 	 dspinforecord("and"           , op_and)            ,

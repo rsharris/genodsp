@@ -923,3 +923,321 @@ no_maximum:
 	exit(EXIT_FAILURE);
 	}
 
+//----------
+// [[-- a dsp operation function group, operating on a single chromosome --]]
+//
+// See genodsp_interface.h, "headers for dsp operator function groups" for
+// function descriptions and argument details.
+//
+//----------
+//
+// op_erase--
+//	Erase any values in the current set of interval values that occur within
+//	(or, alternatively, outside of) a specified minimum and/or maximum.
+//
+//----------
+
+// private dspop subtype
+
+typedef struct dspop_erase
+	{
+	dspop		common;			// common elements shared with all operators
+	int			haveMinVal;
+	char*		minValVarName;
+	valtype		minVal;
+	int			haveMaxVal;
+	char*		maxValVarName;
+	valtype		maxVal;
+	int			keepInside;
+	valtype		zeroVal;
+	} dspop_erase;
+
+// op_erase_short--
+
+void op_erase_short (char* name, int nameWidth, FILE* f, char* indent)
+	{
+	int nameFill = nameWidth-2 - strlen(name);
+	if (indent == NULL) indent = "";
+
+	if (nameFill > 0) fprintf (f, "%s%s:%*s", indent, name, nameFill+1, " ");
+	             else fprintf (f, "%s%s: ", indent, name);
+
+	fprintf (f, "erase values within (or outside of) a specified min and/or max\n");
+	}
+
+
+// op_erase_usage--
+
+void op_erase_usage (char* name, FILE* f, char* indent)
+	{
+	if (indent == NULL) indent = "";
+	//             3456789-123456789-123456789-123456789-123456789-123456789-123456789-123456789
+	fprintf (f, "%serase any values in the current set of interval values that occur within a\n",    indent);
+	fprintf (f, "%sspecified minimum and/or maximum.\n",                                             indent);
+	fprintf (f, "%s\n", indent);
+	fprintf (f, "%susage: %s [options]\n", indent, name);
+	fprintf (f, "%s  --min=<value>            minimum value in resulting signal\n",                  indent);
+	fprintf (f, "%s                           <value> can be a named variable\n",                    indent);
+	fprintf (f, "%s  --max=<value>            maximum value in resulting signal\n",                  indent);
+	fprintf (f, "%s                           <value> can be a named variable\n",                    indent);
+	fprintf (f, "%s  --keep:inside            keep values within the min and max; erase values\n",   indent);
+	fprintf (f, "%s                           outside\n",                                            indent);
+	fprintf (f, "%s                           (this is the default)\n",                              indent);
+	fprintf (f, "%s  --keep:outside           keep values outside the min and max; erase values\n",  indent);
+	fprintf (f, "%s                           inside\n",                                             indent);
+	fprintf (f, "%s                           (this is the default)\n",                              indent);
+	fprintf (f, "%s  --zero=<value>           (Z=) value for erased locations\n",                    indent);
+	fprintf (f, "%s                           (default is 0.0)\n",                                   indent);
+	}
+
+
+// op_erase_parse--
+
+dspop* op_erase_parse (char* name, int _argc, char** _argv)
+	{
+	dspop_erase*	op;
+	int			argc = _argc;
+	char**		argv = _argv;
+	char*		arg, *argVal;
+	valtype		tempVal;
+
+	// allocate and initialize our control record
+
+	op = (dspop_erase*) malloc (sizeof(dspop_erase));
+	if (op == NULL) goto cant_allocate;
+
+	op->common.atRandom = false;
+
+	op->haveMinVal    = false;
+	op->minValVarName = NULL;
+	op->minVal        = 0.0;
+	op->haveMaxVal    = false;
+	op->maxValVarName = NULL;
+	op->maxVal        = 0.0;
+	op->keepInside    = true;
+	op->zeroVal       = 0.0;
+
+	// parse arguments
+
+	while (argc > 0)
+		{
+		arg    = argv[0];
+		argVal = strchr(arg,'=');
+		if (argVal != NULL) argVal++;
+
+		// --min=<value>
+
+		if ((strcmp_prefix (arg, "--minimum=") == 0)
+		 || (strcmp_prefix (arg, "--min=")     == 0))
+			{
+			if (op->haveMinVal) goto more_than_one_minimum;
+			if (!try_string_to_valtype (argVal, &op->minVal))
+				op->minValVarName = copy_string (argVal);
+			op->haveMinVal = true;
+			goto next_arg;
+			}
+
+		// --max=<value>
+
+		if ((strcmp_prefix (arg, "--maximum=") == 0)
+		 || (strcmp_prefix (arg, "--max=")     == 0))
+			{
+			if (op->haveMaxVal) goto more_than_one_maximum;
+			if (!try_string_to_valtype (argVal, &op->maxVal))
+				op->maxValVarName = copy_string (argVal);
+			op->haveMaxVal = true;
+			goto next_arg;
+			}
+
+		// --keep:inside and --keep:outside
+
+		if ((strcmp (arg, "--keep:inside") == 0)
+		 || (strcmp (arg, "--keep=inside") == 0))
+			{
+			op->keepInside = true;
+			goto next_arg;
+			}
+
+		if ((strcmp (arg, "--keep:outside") == 0)
+		 || (strcmp (arg, "--keep=outside") == 0))
+			{
+			op->keepInside = false;
+			goto next_arg;
+			}
+
+		// --zero=<value> or Z=<value>
+
+		if ((strcmp_prefix (arg, "--zero=") == 0)
+		 || (strcmp_prefix (arg, "Z=")      == 0)
+		 || (strcmp_prefix (arg, "--Z=")    == 0))
+			{
+			tempVal = string_to_valtype (argVal);
+			op->zeroVal = tempVal;
+			goto next_arg;
+			}
+
+		// unknown -- argument
+
+		if (strcmp_prefix (arg, "--") == 0)
+			chastise ("[%s] Can't understand \"%s\"\n", name, arg);
+
+		// unknown argument
+
+		chastise ("[%s] Can't understand \"%s\"\n", name, arg);
+
+	next_arg:
+		argv++;  argc--;
+		continue;
+		}
+
+	if ((!op->haveMaxVal) && (!op->haveMinVal)) goto limits_missing;
+
+	if ((op->haveMaxVal) && (op->haveMinVal))
+		{ if (op->minVal > op->maxVal) goto conflicting_limits; }
+
+	return (dspop*) op;
+
+cant_allocate:
+	fprintf (stderr, "[%s] failed to allocate control record (%d bytes)\n",
+	                 name, (int) sizeof(dspop_erase));
+	exit(EXIT_FAILURE);
+	return NULL; // (never reaches here)
+
+more_than_one_minimum:
+	fprintf (stderr, "[%s] minimum limit specified more than once (at \"%s\")\n",
+	                 name, arg);
+	exit(EXIT_FAILURE);
+	return NULL; // (never reaches here)
+
+more_than_one_maximum:
+	fprintf (stderr, "[%s] maximum limit specified more than once (at \"%s\")\n",
+	                 name, arg);
+	exit(EXIT_FAILURE);
+	return NULL; // (never reaches here)
+
+limits_missing:
+	fprintf (stderr, "[%s] neither minimum nor maximum limit was provided\n",
+	                 name);
+	exit(EXIT_FAILURE);
+	return NULL; // (never reaches here)
+
+conflicting_limits:
+	fprintf (stderr, "[%s] conflicting limits (" valtypeFmt ">" valtypeFmt ")\n",
+	                 name, op->minVal, op->maxVal);
+	exit(EXIT_FAILURE);
+	return NULL; // (never reaches here)
+	}
+
+
+// op_erase_free--
+
+void op_erase_free (dspop* _op)
+	{
+	dspop_erase*	op = (dspop_erase*) _op;
+
+	if (op->minValVarName != NULL) free (op->minValVarName);
+	if (op->maxValVarName != NULL) free (op->maxValVarName);
+	free (op);
+	}
+
+
+// op_erase_apply--
+
+void op_erase_apply
+   (arg_dont_complain(dspop*	_op),
+	arg_dont_complain(char*		vName),
+	arg_dont_complain(u32		vLen),
+	arg_dont_complain(valtype*	v))
+	{
+	dspop_erase* op = (dspop_erase*) _op;
+	valtype		minVal = op->minVal;
+	valtype		maxVal = op->maxVal;
+	int			ok;
+	u32			ix;
+
+	// if either limit is a named variable, fetch it now;  note that we copy
+	// the value from the named variable, then destroy our reference to the
+	// named variable
+
+	if (op->minValVarName != NULL)
+		{
+		ok = named_global_exists (op->minValVarName, &minVal);
+		if (!ok) goto no_minimum;
+		op->minVal = minVal;
+		fprintf (stderr, "[%s] using %s = " valtypeFmt " as minimum limit\n",
+		                 _op->name, op->minValVarName, minVal);
+		free (op->minValVarName);
+		op->minValVarName = NULL;
+		}
+
+	if (op->maxValVarName != NULL)
+		{
+		ok = named_global_exists (op->maxValVarName, &maxVal);
+		if (!ok) goto no_maximum;
+		op->maxVal = maxVal;
+		fprintf (stderr, "[%s] using %s = " valtypeFmt " as maximum limit\n",
+		                 _op->name, op->maxValVarName, maxVal);
+		free (op->maxValVarName);
+		op->maxValVarName = NULL;
+		}
+
+	// apply limits over the vector
+
+	if (op->keepInside)
+		{
+		// keep the inside, erase the outside
+
+		if (!op->haveMaxVal)
+			{ // erase below minimum only
+			for (ix=0 ; ix<vLen ; ix++)
+				{ if (v[ix] < minVal) v[ix] = op->zeroVal; }
+			}
+		else if (!op->haveMinVal)
+			{ // erase above maximum only
+			for (ix=0 ; ix<vLen ; ix++)
+				{ if (v[ix] > maxVal) v[ix] = op->zeroVal; }
+			}
+		else
+			{ // erase outside of minimum and maximum
+			for (ix=0 ; ix<vLen ; ix++)
+				{ if ((v[ix] < minVal) || (v[ix] > maxVal)) v[ix] = op->zeroVal; }
+			}
+		}
+	else
+		{
+		// keep the outside, erase the inside
+
+		if (!op->haveMaxVal)
+			{ // erase above minimum only
+			for (ix=0 ; ix<vLen ; ix++)
+				{ if (v[ix] > minVal) v[ix] = op->zeroVal; }
+			}
+		else if (!op->haveMinVal)
+			{ // erase below maximum only
+			for (ix=0 ; ix<vLen ; ix++)
+				{ if (v[ix] < maxVal) v[ix] = op->zeroVal; }
+			}
+		else
+			{ // erase inside of minimum and maximum
+			for (ix=0 ; ix<vLen ; ix++)
+				{ if ((v[ix] > minVal) && (v[ix] < maxVal)) v[ix] = op->zeroVal; }
+			}
+		}
+
+	// success
+
+	return;
+
+	// failure
+
+no_minimum:
+	fprintf (stderr, "[%s] attempt to use %s as minimum failed (no such variable)\n",
+	                 _op->name, op->minValVarName);
+	exit(EXIT_FAILURE);
+
+no_maximum:
+	fprintf (stderr, "[%s] attempt to use %s as maximum failed (no such variable)\n",
+	                 _op->name, op->minValVarName);
+	exit(EXIT_FAILURE);
+	}
+

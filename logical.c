@@ -76,6 +76,7 @@ void op_binarize_usage (char* name, FILE* f, char* indent)
 	fprintf (f, "%s                           (default is 0.0)\n",                                   indent);
 	}
 
+
 // op_binarize_parse--
 
 dspop* op_binarize_parse (char* name, int _argc, char** _argv)
