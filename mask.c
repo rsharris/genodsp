@@ -1210,17 +1210,17 @@ void op_erase_apply
 		if (!op->haveMaxVal)
 			{ // erase above minimum only
 			for (ix=0 ; ix<vLen ; ix++)
-				{ if (v[ix] > minVal) v[ix] = op->zeroVal; }
+				{ if (v[ix] >= minVal) v[ix] = op->zeroVal; }
 			}
 		else if (!op->haveMinVal)
 			{ // erase below maximum only
 			for (ix=0 ; ix<vLen ; ix++)
-				{ if (v[ix] < maxVal) v[ix] = op->zeroVal; }
+				{ if (v[ix] <= maxVal) v[ix] = op->zeroVal; }
 			}
 		else
 			{ // erase inside of minimum and maximum
 			for (ix=0 ; ix<vLen ; ix++)
-				{ if ((v[ix] > minVal) && (v[ix] < maxVal)) v[ix] = op->zeroVal; }
+				{ if ((v[ix] >= minVal) && (v[ix] <= maxVal)) v[ix] = op->zeroVal; }
 			}
 		}
 
