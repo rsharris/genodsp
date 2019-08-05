@@ -628,6 +628,8 @@ typedef struct dspop_dilate
 	{
 	dspop		common;			// common elements shared with all operators
 	u32			dilationLength;
+	u32			leftDilation;
+	u32			rightDilation;
 	int			haveThreshold;
 	char*		thresholdVarName;
 	valtype		threshold;
@@ -683,6 +685,10 @@ void op_dilate_usage (char* name, FILE* f, char* indent)
 	fprintf (f, "%s                           (default is 1.0)\n",                                    indent);
 	fprintf (f, "%s  --zero=<value>           (Z=) value for locations not in the dilation set\n",    indent);
 	fprintf (f, "%s                           (default is 0.0)\n",                                    indent);
+	fprintf (f, "%s  --left=<length>          intervals will be widened by this amount, only on\n",   indent);
+	fprintf (f, "%s                           the left side\n",                                       indent);
+	fprintf (f, "%s  --right=<length>         intervals will be widened by this amount, only on\n",   indent);
+	fprintf (f, "%s                           the right side\n",                                      indent);
 	}
 
 // op_dilate_parse--
@@ -704,6 +710,8 @@ dspop* op_dilate_parse (char* name, int _argc, char** _argv)
 	op->common.atRandom = false;
 
 	op->dilationLength   = 0;      // not used, user is required to set it
+	op->leftDilation     = 0;
+	op->rightDilation    = 0;
 	op->haveThreshold    = false;
 	op->thresholdVarName = NULL;
 	op->threshold        = 0.0;
@@ -758,6 +766,22 @@ dspop* op_dilate_parse (char* name, int _argc, char** _argv)
 			goto next_arg;
 			}
 
+		// --left=<length> or --right=<length>
+
+		if (strcmp_prefix (arg, "--left=") == 0)
+			{
+			tempVal = string_to_valtype (argVal);
+			op->leftDilation = tempVal;
+			goto next_arg;
+			}
+
+		if (strcmp_prefix (arg, "--right=") == 0)
+			{
+			tempVal = string_to_valtype (argVal);
+			op->rightDilation = tempVal;
+			goto next_arg;
+			}
+
 		// --debug argument
 
 		if (strcmp (arg, "--debug") == 0)
@@ -786,7 +810,17 @@ dspop* op_dilate_parse (char* name, int _argc, char** _argv)
 		continue;
 		}
 
-	if (!haveLength) goto length_missing;
+	// user has to specify the length, OR specify a left-only or right-only
+	// length
+
+	if (haveLength)
+		{
+		if ((op->leftDilation != 0) || (op->rightDilation != 0)) goto more_than_one_length;
+		}
+	else // if (!haveLength)
+		{
+		if ((op->leftDilation == 0) && (op->rightDilation == 0)) goto length_missing;
+		}
 
 	return (dspop*) op;
 
@@ -804,6 +838,11 @@ more_than_one_threshold:
 
 length_missing:
 	fprintf (stderr, "[%s] dilation length was not provided\n", name);
+	exit(EXIT_FAILURE);
+	return NULL; // (never reaches here)
+
+more_than_one_length:
+	fprintf (stderr, "[%s] dilation length was provided in more than one way\n", name);
 	exit(EXIT_FAILURE);
 	return NULL; // (never reaches here)
 	}
@@ -857,8 +896,16 @@ void op_dilate_apply
 	// locations in intervals are binarized immediately;  locations in gaps
 	// are not binarized until we have determined the start and end of the gap
 
-	leftDilation  = dilationLength / 2;
-	rightDilation = dilationLength - leftDilation;
+	if ((op->leftDilation == 0) && (op->rightDilation == 0))
+		{
+		leftDilation  = dilationLength / 2;
+		rightDilation = dilationLength - leftDilation;
+		}
+	else
+		{
+		leftDilation  = op->leftDilation;
+		rightDilation = op->rightDilation;
+		}
 
 	gapStartIx = 0;
 	inInterval = (v[0] > cutoffThresh);
@@ -1030,6 +1077,8 @@ typedef struct dspop_erode
 	{
 	dspop		common;			// common elements shared with all operators
 	u32			erosionLength;
+	u32			leftErosion;
+	u32			rightErosion;
 	int			haveThreshold;
 	char*		thresholdVarName;
 	valtype		threshold;
@@ -1085,6 +1134,10 @@ void op_erode_usage (char* name, FILE* f, char* indent)
 	fprintf (f, "%s                           (default is 1.0)\n",                                    indent);
 	fprintf (f, "%s  --zero=<value>           (Z=) value for locations not in the erosion set\n",     indent);
 	fprintf (f, "%s                           (default is 0.0)\n",                                    indent);
+	fprintf (f, "%s  --left=<length>          intervals will be shrunk by this amount, only on\n",    indent);
+	fprintf (f, "%s                           the left side\n",                                       indent);
+	fprintf (f, "%s  --right=<length>         intervals will be shrunk by this amount, only on\n",    indent);
+	fprintf (f, "%s                           the right side\n",                                      indent);
 	}
 
 // op_erode_parse--
@@ -1106,6 +1159,8 @@ dspop* op_erode_parse (char* name, int _argc, char** _argv)
 	op->common.atRandom = false;
 
 	op->erosionLength    = 0;      // not used, user is required to set it
+	op->leftErosion      = 0;
+	op->rightErosion     = 0;
 	op->haveThreshold    = false;
 	op->thresholdVarName = NULL;
 	op->threshold        = 0.0;
@@ -1160,6 +1215,22 @@ dspop* op_erode_parse (char* name, int _argc, char** _argv)
 			goto next_arg;
 			}
 
+		// --left=<length> or --right=<length>
+
+		if (strcmp_prefix (arg, "--left=") == 0)
+			{
+			tempVal = string_to_valtype (argVal);
+			op->leftErosion = tempVal;
+			goto next_arg;
+			}
+
+		if (strcmp_prefix (arg, "--right=") == 0)
+			{
+			tempVal = string_to_valtype (argVal);
+			op->rightErosion = tempVal;
+			goto next_arg;
+			}
+
 		// --debug argument
 
 		if (strcmp (arg, "--debug") == 0)
@@ -1188,7 +1259,17 @@ dspop* op_erode_parse (char* name, int _argc, char** _argv)
 		continue;
 		}
 
-	if (!haveLength) goto length_missing;
+	// user has to specify the length, OR specify a left-only or right-only
+	// length
+
+	if (haveLength)
+		{
+		if ((op->leftErosion != 0) || (op->rightErosion != 0)) goto more_than_one_length;
+		}
+	else // if (!haveLength)
+		{
+		if ((op->leftErosion == 0) && (op->rightErosion == 0)) goto length_missing;
+		}
 
 	return (dspop*) op;
 
@@ -1206,6 +1287,11 @@ more_than_one_threshold:
 
 length_missing:
 	fprintf (stderr, "[%s] erosion length was not provided\n", name);
+	exit(EXIT_FAILURE);
+	return NULL; // (never reaches here)
+
+more_than_one_length:
+	fprintf (stderr, "[%s] erosion length was provided in more than one way\n", name);
 	exit(EXIT_FAILURE);
 	return NULL; // (never reaches here)
 	}
@@ -1262,8 +1348,16 @@ void op_erode_apply
 	// the location *beyond* the right end, which simplifies the handling of
 	// the final interval
 
-	leftErosion  = erosionLength / 2;
-	rightErosion = erosionLength - leftErosion;
+	if ((op->leftErosion == 0) && (op->rightErosion == 0))
+		{
+		leftErosion  = erosionLength / 2;
+		rightErosion = erosionLength - leftErosion;
+		}
+	else
+		{
+		leftErosion  = op->leftErosion;
+		rightErosion = op->rightErosion;
+		}
 
 	startIx = 0;
 	inInterval = (v[0] > cutoffThresh);
