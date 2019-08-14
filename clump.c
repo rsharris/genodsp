@@ -19,7 +19,7 @@ typedef struct dspop_clump
 	dspop		common;			// common elements shared with all operators
 	char*		averageVarName;
 	valtype		average;
-	u32			minLength;		// (overridden if relativeLength > 0)
+	u32			minLength;
 	double		relativeLength;	// ratio of minLength to chromosome length
 	valtype		oneVal;
 	valtype		zeroVal;
@@ -30,6 +30,7 @@ typedef struct dspop_clump
 
 // prototypes
 
+static void parse_min_length (char* name, char* arg, char*argVal, dspop_clump* op, int maxOk);
 static void clump_search (dspop* _op, char* vName, u32 vLen, valtype* v,
                           int aboveThresh);
 
@@ -131,8 +132,6 @@ dspop* op_clump_parse (char* name, int _argc, char** _argv)
 	int				argc = _argc;
 	char**			argv = _argv;
 	char*			arg, *argVal;
-	char*			tempStr;
-	int				tempInt;
 	valtype			tempVal;
 	int				haveAverage;
 
@@ -181,46 +180,7 @@ dspop* op_clump_parse (char* name, int _argc, char** _argv)
 		 || (strcmp_prefix (arg, "L=")        == 0)
 		 || (strcmp_prefix (arg, "--L=")      == 0))
 			{
-			if (strcmp (argVal, "CL") == 0)
-				{
-				op->relativeLength = 1.0;
-				op->minLength = 0;
-				}
-			else if (strcmp_prefix (argVal, "CL*") == 0)
-				{
-				op->relativeLength = string_to_double(argVal+strlen("CL*"));
-				if (op->relativeLength <= 0.0) goto relative_length_not_positive;
-				if (op->relativeLength >  1.0) goto relative_length_too_large;
-				op->minLength = 0;
-				}
-			else if (strcmp_suffix (argVal, "*CL") == 0)
-				{
-			    tempStr = copy_string (argVal);
-			    tempStr[strlen(tempStr)-strlen("*CL")] = 0;
-				op->relativeLength = string_to_double(tempStr);
-				if (op->relativeLength <= 0.0) goto relative_length_not_positive;
-				if (op->relativeLength >  1.0) goto relative_length_too_large;
-				op->minLength = 0;
-				free(tempStr);
-				}
-			else if (strcmp_prefix (argVal, "CL/") == 0)
-				{
-				op->relativeLength = string_to_double(argVal+strlen("CL*"));
-				if (op->relativeLength < 0.0) goto relative_length_not_positive;
-				if (op->relativeLength < 1.0) goto relative_length_too_large;
-				op->relativeLength = 1.0 / op->relativeLength;
-				op->minLength = 0;
-				}
-			else
-				{
-				tempInt = string_to_unitized_int (argVal, /*thousands*/ true);
-				if (tempInt == 0)
-					chastise ("[%s] minimum length can't be zero (\"%s\")\n", name, arg);
-				if (tempInt < 0)
-					chastise ("[%s] minimum length can't be negative (\"%s\")\n", name, arg);
-				op->minLength = (u32) tempInt;
-				op->relativeLength = 0.0;
-				}
+			parse_min_length (name, arg, argVal, op, /*maxOK*/true);
 			goto next_arg;
 			}
 
@@ -292,16 +252,6 @@ cant_allocate:
 
 more_than_one_average:
 	fprintf (stderr, "[%s] average threshold specified more than once (at \"%s\")\n",
-	                 name, arg);
-	exit(EXIT_FAILURE);
-
-relative_length_not_positive:
-	fprintf (stderr, "[%s] relative length has to be positive (at \"%s\")\n",
-	                 name, arg);
-	exit(EXIT_FAILURE);
-
-relative_length_too_large:
-	fprintf (stderr, "[%s] relative length can't be more than 1 (at \"%s\")\n",
 	                 name, arg);
 	exit(EXIT_FAILURE);
 	return NULL; // (never reaches here)
@@ -400,6 +350,139 @@ void op_skimp_apply
 	arg_dont_complain(valtype*	v))
 	{ clump_search (_op,vName,vLen,v,/*above thresh*/ false); }
 
+//----------
+//
+// parse_min_length--
+//	Perform the clump-finding.
+//
+//----------
+
+static void parse_min_length
+   (char*			name,
+	char*			arg,
+	char*			argVal,
+	dspop_clump*	op,
+	int				maxOk)
+	{
+	int				tempInt;
+	dspop_clump		tempOp1, tempOp2;
+
+	// parse as, e.g., max(CL/3,1000)
+
+	if ((maxOk)
+	 && (strcmp_prefix (argVal, "max(") == 0)
+	 && (strcmp_suffix (argVal, ")") == 0))
+		{
+		char* field1, *field2;
+
+		// split into two fields
+		field1 = copy_string (argVal+strlen("max("));
+		field1[strlen(field1)-1] = 0;
+		field2 = strchr(field1,',');
+		if (field2 == NULL) goto bad_relative_length;
+		*(field2++) = 0;
+
+		// parse the fields
+		tempOp1.minLength      = 0;
+		tempOp1.relativeLength = 0.0;
+		parse_min_length (name, arg, field1, &tempOp1, /*maxOK*/false);
+		tempOp2.minLength      = 0;
+		tempOp2.relativeLength = 0.0;
+		parse_min_length (name, arg, field2, &tempOp2, /*maxOK*/false);
+
+		// make sure one field was relative, the other wasn't
+		if ((tempOp1.relativeLength > 0) == (tempOp2.relativeLength > 0))
+			goto bad_relative_length;
+
+		if (tempOp1.relativeLength > 0)
+			{
+			op->relativeLength = tempOp1.relativeLength;
+			op->minLength      = tempOp2.minLength;
+			}
+		else
+			{
+			op->relativeLength = tempOp2.relativeLength;
+			op->minLength      = tempOp1.minLength;
+			}
+
+		free (field1);
+		return;
+		}
+
+	// parse as CL
+
+	if (strcmp (argVal, "CL") == 0)
+		{
+		op->relativeLength = 1.0;
+		op->minLength = 0;
+		return;
+		}
+
+	// parse as, e.g., CL*.50
+
+	if (strcmp_prefix (argVal, "CL*") == 0)
+		{
+		op->relativeLength = string_to_double(argVal+strlen("CL*"));
+		if (op->relativeLength <= 0.0) goto relative_length_not_positive;
+		if (op->relativeLength >  1.0) goto relative_length_too_large;
+		op->minLength = 0;
+		return;
+		}
+
+	// parse as, e.g., .50*CL
+
+	if (strcmp_suffix (argVal, "*CL") == 0)
+		{
+		char* tempStr = copy_string (argVal);
+		tempStr[strlen(tempStr)-strlen("*CL")] = 0;
+		op->relativeLength = string_to_double(tempStr);
+		if (op->relativeLength <= 0.0) goto relative_length_not_positive;
+		if (op->relativeLength >  1.0) goto relative_length_too_large;
+		op->minLength = 0;
+		free(tempStr);
+		return;
+		}
+
+	// parse as, e.g., CL/3
+
+	if (strcmp_prefix (argVal, "CL/") == 0)
+		{
+		op->relativeLength = string_to_double(argVal+strlen("CL*"));
+		if (op->relativeLength < 0.0) goto relative_length_not_positive;
+		if (op->relativeLength < 1.0) goto relative_length_too_large;
+		op->relativeLength = 1.0 / op->relativeLength;
+		op->minLength = 0;
+		return;
+		}
+
+	// parse as, e.g., 100
+
+	tempInt = string_to_unitized_int (argVal, /*thousands*/ true);
+	if (tempInt == 0)
+		chastise ("[%s] minimum length can't be zero (\"%s\")\n", name, arg);
+	if (tempInt < 0)
+		chastise ("[%s] minimum length can't be negative (\"%s\")\n", name, arg);
+	op->minLength = (u32) tempInt;
+	op->relativeLength = 0.0;
+
+	return;
+
+bad_relative_length:
+	fprintf (stderr, "[%s] can't parse relative length (at \"%s\")\n",
+	                 name, arg);
+	exit(EXIT_FAILURE);
+
+relative_length_not_positive:
+	fprintf (stderr, "[%s] relative length has to be positive (at \"%s\")\n",
+	                 name, arg);
+	exit(EXIT_FAILURE);
+
+relative_length_too_large:
+	fprintf (stderr, "[%s] relative length can't be more than 1 (at \"%s\")\n",
+	                 name, arg);
+	exit(EXIT_FAILURE);
+	// (never reaches here)
+	}
 
 //----------
 //
@@ -417,7 +500,7 @@ static void clump_search
 	{
 	dspop_clump*	op = (dspop_clump*) _op;
 	valtype			targetAvg = op->average;
-	u32				minLength;
+	u32				minLength = op->minLength;
 	valtype			oneVal    = op->oneVal;
 	valtype			zeroVal   = op->zeroVal;
 	valtype*		s         = get_scratch_vector();
@@ -430,11 +513,10 @@ static void clump_search
 	u32				start, end, prevStart, prevEnd;
 	int				allMonotonic;
 
-	if (op->relativeLength <= 0.0)
-		minLength = op->minLength;
-	else
+	if (op->relativeLength > 0.0)
 		{
-		minLength = (u32) (op->relativeLength * vLen);
+		u32 relLength = (u32) (op->relativeLength * vLen);
+		if (relLength > minLength) minLength = relLength;
 		if (op->debug)
 			fprintf (stderr, " vLen=%u minLength=%u\n",vLen,minLength);
 		}
