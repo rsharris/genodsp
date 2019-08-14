@@ -19,7 +19,8 @@ typedef struct dspop_clump
 	dspop		common;			// common elements shared with all operators
 	char*		averageVarName;
 	valtype		average;
-	u32			minLength;
+	u32			minLength;		// (overridden if relativeLength > 0)
+	double		relativeLength;	// ratio of minLength to chromosome length
 	valtype		oneVal;
 	valtype		zeroVal;
 	int			debug;
@@ -112,6 +113,9 @@ static void op_clump_usage_args (char* name, FILE* f, char* indent)
 	fprintf (f, "%s                           (default is 0.0)\n",                                   indent);
 	fprintf (f, "%s  --average=<variable>     (T=) get average from named variable\n",                                      indent);
 	fprintf (f, "%s  --length=<length>        (L=) minimum length of qualifying interval\n",         indent);
+	fprintf (f, "%s                           <length> can also be in form <scale>*CL, in\n",        indent);
+	fprintf (f, "%s                           which case it is relative to the chromosome\n",        indent);
+	fprintf (f, "%s                           length\n",                                             indent);
 	fprintf (f, "%s                           (default is 100)\n",                                   indent);
 	fprintf (f, "%s  --one=<value>            (O=) value to fill qualifying intervals\n",            indent);
 	fprintf (f, "%s                           (default is 1.0)\n",                                   indent);
@@ -127,6 +131,7 @@ dspop* op_clump_parse (char* name, int _argc, char** _argv)
 	int				argc = _argc;
 	char**			argv = _argv;
 	char*			arg, *argVal;
+	char*			tempStr;
 	int				tempInt;
 	valtype			tempVal;
 	int				haveAverage;
@@ -141,6 +146,7 @@ dspop* op_clump_parse (char* name, int _argc, char** _argv)
 	op->averageVarName = NULL;
 	op->average        = 0.0;
 	op->minLength      = 100;
+	op->relativeLength = 0.0;
 	op->oneVal         = 1.0;
 	op->zeroVal        = 0.0;
 	op->debug          = false;
@@ -175,12 +181,46 @@ dspop* op_clump_parse (char* name, int _argc, char** _argv)
 		 || (strcmp_prefix (arg, "L=")        == 0)
 		 || (strcmp_prefix (arg, "--L=")      == 0))
 			{
-			tempInt = string_to_unitized_int (argVal, /*thousands*/ true);
-			if (tempInt == 0)
-				chastise ("[%s] minimum length can't be zero (\"%s\")\n", name, arg);
-			if (tempInt < 0)
-				chastise ("[%s] minimum length can't be negative (\"%s\")\n", name, arg);
-			op->minLength = (u32) tempInt;
+			if (strcmp (argVal, "CL") == 0)
+				{
+				op->relativeLength = 1.0;
+				op->minLength = 0;
+				}
+			else if (strcmp_prefix (argVal, "CL*") == 0)
+				{
+				op->relativeLength = string_to_double(argVal+strlen("CL*"));
+				if (op->relativeLength <= 0.0) goto relative_length_not_positive;
+				if (op->relativeLength >  1.0) goto relative_length_too_large;
+				op->minLength = 0;
+				}
+			else if (strcmp_suffix (argVal, "*CL") == 0)
+				{
+			    tempStr = copy_string (argVal);
+			    tempStr[strlen(tempStr)-strlen("*CL")] = 0;
+				op->relativeLength = string_to_double(tempStr);
+				if (op->relativeLength <= 0.0) goto relative_length_not_positive;
+				if (op->relativeLength >  1.0) goto relative_length_too_large;
+				op->minLength = 0;
+				free(tempStr);
+				}
+			else if (strcmp_prefix (argVal, "CL/") == 0)
+				{
+				op->relativeLength = string_to_double(argVal+strlen("CL*"));
+				if (op->relativeLength < 0.0) goto relative_length_not_positive;
+				if (op->relativeLength < 1.0) goto relative_length_too_large;
+				op->relativeLength = 1.0 / op->relativeLength;
+				op->minLength = 0;
+				}
+			else
+				{
+				tempInt = string_to_unitized_int (argVal, /*thousands*/ true);
+				if (tempInt == 0)
+					chastise ("[%s] minimum length can't be zero (\"%s\")\n", name, arg);
+				if (tempInt < 0)
+					chastise ("[%s] minimum length can't be negative (\"%s\")\n", name, arg);
+				op->minLength = (u32) tempInt;
+				op->relativeLength = 0.0;
+				}
 			goto next_arg;
 			}
 
@@ -252,6 +292,16 @@ cant_allocate:
 
 more_than_one_average:
 	fprintf (stderr, "[%s] average threshold specified more than once (at \"%s\")\n",
+	                 name, arg);
+	exit(EXIT_FAILURE);
+
+relative_length_not_positive:
+	fprintf (stderr, "[%s] relative length has to be positive (at \"%s\")\n",
+	                 name, arg);
+	exit(EXIT_FAILURE);
+
+relative_length_too_large:
+	fprintf (stderr, "[%s] relative length can't be more than 1 (at \"%s\")\n",
 	                 name, arg);
 	exit(EXIT_FAILURE);
 	return NULL; // (never reaches here)
@@ -367,7 +417,7 @@ static void clump_search
 	{
 	dspop_clump*	op = (dspop_clump*) _op;
 	valtype			targetAvg = op->average;
-	u32				minLength = op->minLength;
+	u32				minLength;
 	valtype			oneVal    = op->oneVal;
 	valtype			zeroVal   = op->zeroVal;
 	valtype*		s         = get_scratch_vector();
@@ -379,6 +429,15 @@ static void clump_search
 	u32				numMinSums, minScan, minIx;
 	u32				start, end, prevStart, prevEnd;
 	int				allMonotonic;
+
+	if (op->relativeLength <= 0.0)
+		minLength = op->minLength;
+	else
+		{
+		minLength = (u32) (op->relativeLength * vLen);
+		if (op->debug)
+			fprintf (stderr, " vLen=%u minLength=%u\n",vLen,minLength);
+		}
 
 	// if the threshold is a named variable, fetch it now;  note that we copy
 	// the value from the named variable, then destroy our reference to the

@@ -22,6 +22,8 @@ typedef uint64_t u64;
 
 char*  copy_string            (const char* s);
 int    strcmp_prefix          (const char* str1, const char* str2);
+int    strcmp_suffix          (const char* str1, const char* str2);
+int    strncmp_suffix         (const char* str1, const char* str2, size_t n);
 int    string_to_int          (const char* s);
 int    string_to_u32          (const char* s);
 int    string_to_unitized_int (const char* s, int byThousands);

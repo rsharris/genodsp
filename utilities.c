@@ -72,6 +72,51 @@ int strcmp_prefix
 
 //----------
 //
+// strcmp_suffix, strncmp_suffix--
+//	Determine if a string contains another as a suffix.
+//
+//----------
+//
+// Arguments:
+//	const char*	str1:	The string.
+//	const char*	str2:	The suffix string.
+//	size_t		n:		(strncmp_suffix only) The max length of str1.
+//
+// Returns:
+//	The same as strcmp(suffix1,str2) or strncmp(suffix1,str2,n) would, where
+//	suffix1 is the last N characters of str1, and N is the length of str2.  If
+//	str2 is longer than str1, it cannot be a suffix (in this case we compare to
+//	the entirety of str1).
+//
+//----------
+
+int strcmp_suffix
+   (const char*	str1,
+	const char*	str2)
+	{
+	size_t len1 = strlen(str1);
+	size_t len2 = strlen(str2);
+
+	if (len2 <= len1) return strcmp (str1+len1-len2, str2);
+	             else return strcmp (str1,           str2);
+	}
+
+int strncmp_suffix
+   (const char*	str1,
+	const char*	str2,
+	size_t		n)
+	{
+	size_t len1 = strlen(str1);
+	size_t len2 = strlen(str2);
+
+	if (len1 > n) len1 = n;
+
+	if (len2 <= len1) return strcmp (str1+len1-len2, str2);
+	             else return strcmp (str1,           str2);
+	}
+
+//----------
+//
 // string_to_int, string_to_u32--
 //	Parse a string for the integer value it contains.
 //

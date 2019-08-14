@@ -21,7 +21,7 @@ cleano:
 	rm -f *.o
 
 install:
-	mv genodsp ${HOME}/bin
+	mv genodsp $${HOME}/bin
 
 archive:
 	rm -f  genodsp.tar.gz
