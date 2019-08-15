@@ -770,15 +770,33 @@ dspop* op_dilate_parse (char* name, int _argc, char** _argv)
 
 		if (strcmp_prefix (arg, "--left=") == 0)
 			{
-			tempVal = string_to_valtype (argVal);
-			op->leftDilation = tempVal;
+			if (strcmp_suffix (argVal, "-1") == 0)
+				{
+				char* tempStr = copy_string (argVal);
+				tempStr[strlen(tempStr)-strlen("-1")] = 0;
+				op->leftDilation = string_to_unitized_int(tempStr,/*thousands*/true) - 1;
+				free(tempStr);
+				}
+			else
+				{
+				op->leftDilation = string_to_unitized_int(argVal,/*thousands*/true);
+				}
 			goto next_arg;
 			}
 
 		if (strcmp_prefix (arg, "--right=") == 0)
 			{
-			tempVal = string_to_valtype (argVal);
-			op->rightDilation = tempVal;
+			if (strcmp_suffix (argVal, "-1") == 0)
+				{
+				char* tempStr = copy_string (argVal);
+				tempStr[strlen(tempStr)-strlen("-1")] = 0;
+				op->rightDilation = string_to_unitized_int(tempStr,/*thousands*/true) - 1;
+				free(tempStr);
+				}
+			else
+				{
+				op->rightDilation = string_to_unitized_int(argVal,/*thousands*/true);
+				}
 			goto next_arg;
 			}
 
