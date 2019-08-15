@@ -978,8 +978,10 @@ void op_erase_usage (char* name, FILE* f, char* indent)
 	fprintf (f, "%susage: %s [options]\n", indent, name);
 	fprintf (f, "%s  --min=<value>            minimum value in resulting signal\n",                  indent);
 	fprintf (f, "%s                           <value> can be a named variable\n",                    indent);
+	fprintf (f, "%s                           (default is negative infinity)\n",                     indent);
 	fprintf (f, "%s  --max=<value>            maximum value in resulting signal\n",                  indent);
 	fprintf (f, "%s                           <value> can be a named variable\n",                    indent);
+	fprintf (f, "%s                           (default is infinity)\n",                              indent);
 	fprintf (f, "%s  --keep:outside           keep values outside the min and max; erase values\n",  indent);
 	fprintf (f, "%s                           inside\n",                                             indent);
 	fprintf (f, "%s                           (this is the default)\n",                              indent);
