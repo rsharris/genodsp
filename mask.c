@@ -980,12 +980,11 @@ void op_erase_usage (char* name, FILE* f, char* indent)
 	fprintf (f, "%s                           <value> can be a named variable\n",                    indent);
 	fprintf (f, "%s  --max=<value>            maximum value in resulting signal\n",                  indent);
 	fprintf (f, "%s                           <value> can be a named variable\n",                    indent);
-	fprintf (f, "%s  --keep:inside            keep values within the min and max; erase values\n",   indent);
-	fprintf (f, "%s                           outside\n",                                            indent);
-	fprintf (f, "%s                           (this is the default)\n",                              indent);
 	fprintf (f, "%s  --keep:outside           keep values outside the min and max; erase values\n",  indent);
 	fprintf (f, "%s                           inside\n",                                             indent);
 	fprintf (f, "%s                           (this is the default)\n",                              indent);
+	fprintf (f, "%s  --keep:inside            keep values within the min and max; erase values\n",   indent);
+	fprintf (f, "%s                           outside\n",                                            indent);
 	fprintf (f, "%s  --zero=<value>           (Z=) value for erased locations\n",                    indent);
 	fprintf (f, "%s                           (default is 0.0)\n",                                   indent);
 	}
@@ -1014,7 +1013,7 @@ dspop* op_erase_parse (char* name, int _argc, char** _argv)
 	op->haveMaxVal    = false;
 	op->maxValVarName = NULL;
 	op->maxVal        = 0.0;
-	op->keepInside    = true;
+	op->keepInside    = false;
 	op->zeroVal       = 0.0;
 
 	// parse arguments
@@ -1049,19 +1048,19 @@ dspop* op_erase_parse (char* name, int _argc, char** _argv)
 			goto next_arg;
 			}
 
-		// --keep:inside and --keep:outside
-
-		if ((strcmp (arg, "--keep:inside") == 0)
-		 || (strcmp (arg, "--keep=inside") == 0))
-			{
-			op->keepInside = true;
-			goto next_arg;
-			}
+		// --keep:outside and --keep:inside
 
 		if ((strcmp (arg, "--keep:outside") == 0)
 		 || (strcmp (arg, "--keep=outside") == 0))
 			{
 			op->keepInside = false;
+			goto next_arg;
+			}
+
+		if ((strcmp (arg, "--keep:inside") == 0)
+		 || (strcmp (arg, "--keep=inside") == 0))
+			{
+			op->keepInside = true;
 			goto next_arg;
 			}
 
