@@ -20,7 +20,9 @@ typedef struct dspop_sum
 	u32			windowSize;
 	valtype		denominator;
 	valtype		zeroVal;
-	int			useActualDenom;	// only for op_window_sum
+	int			windowIsChromosome;	// (only for op_window_sum)
+	int			useActualDenom;	    // (only for op_window_sum)
+	int			denomIsWindowSize;  // (only for op_window_sum)
 	} dspop_sum;
 
 //----------
@@ -63,6 +65,7 @@ void op_window_sum_usage (char* name, FILE* f, char* indent)
 	fprintf (f, "%sthe remaining entries set to zero.\n",                                            indent);
 	fprintf (f, "%s\n", indent);
 	fprintf (f, "%susage: %s [options]\n", indent, name);
+	fprintf (f, "%s  --window=chromosome      entire chromosome is a single window\n",               indent);
 	fprintf (f, "%s  --window=<length>        (W=) size of window\n",                                indent);
 	fprintf (f, "%s  --denom=<value>          (D=) denominator; \"window\" or \"W\" can be used\n",  indent);
 	fprintf (f, "%s                           as the value; the value \"actual\" means to use the\n",indent);
@@ -83,7 +86,6 @@ dspop* op_window_sum_parse (char* name, int _argc, char** _argv)
 	char*		arg, *argVal;
 	int			tempInt;
 	valtype		tempVal;
-	int			denomIsWindowSize;
 
 	// allocate and initialize our control record
 
@@ -92,11 +94,12 @@ dspop* op_window_sum_parse (char* name, int _argc, char** _argv)
 
 	op->common.atRandom = false;
 
-	op->windowSize     = (u32) get_named_global ("windowSize", 100);
-	op->denominator    = 1.0;
-	op->zeroVal        = 0.0;
-	op->useActualDenom = false;
-	denomIsWindowSize  = false;
+	op->windowSize         = (u32) get_named_global ("windowSize", 100);
+	op->denominator        = 1.0;
+	op->zeroVal            = 0.0;
+	op->windowIsChromosome = false;
+	op->useActualDenom     = false;
+	op->denomIsWindowSize  = false;
 
 	// parse arguments
 
@@ -106,7 +109,10 @@ dspop* op_window_sum_parse (char* name, int _argc, char** _argv)
 		argVal = strchr(arg,'=');
 		if (argVal != NULL) argVal++;
 
-		// --window=<length> or W=<length>
+		// -window=chromosome, --window=<length> or W=<length>
+
+		if (strcmp (arg, "--window=chromosome") == 0)
+			{ op->windowIsChromosome = true;  goto next_arg; }
 
 		if ((strcmp_prefix (arg, "--window=") == 0)
 		 || (strcmp_prefix (arg, "W=")        == 0)
@@ -124,6 +130,7 @@ dspop* op_window_sum_parse (char* name, int _argc, char** _argv)
 				tempInt = 3;
 				}
 			op->windowSize = (u32) tempInt;
+			op->windowIsChromosome = false;
 			goto next_arg;
 			}
 
@@ -134,14 +141,14 @@ dspop* op_window_sum_parse (char* name, int _argc, char** _argv)
 		 || (strcmp_prefix (arg, "D=")             == 0)
 		 || (strcmp_prefix (arg, "--D=")           == 0))
 			{
-			op->denominator    = 1.0;
-			op->useActualDenom = false;
-			denomIsWindowSize  = false;
+			op->denominator       = 1.0;
+			op->useActualDenom    = false;
+			op->denomIsWindowSize = false;
 			if (strcmp (argVal, "actual") == 0)
 				{ op->useActualDenom = true;  goto next_arg; }
 			if ((strcmp (argVal, "window") == 0)
 			 || (strcmp (argVal, "W")      == 0))
-				{ denomIsWindowSize = true;  goto next_arg; }
+				{ op->denomIsWindowSize = true;  goto next_arg; }
 			tempVal = string_to_valtype (argVal);
 			if (tempVal == 0)
 				chastise ("[%s] denominator can't be zero (\"%s\")\n", name, arg);
@@ -174,15 +181,12 @@ dspop* op_window_sum_parse (char* name, int _argc, char** _argv)
 		continue;
 		}
 
-	if (op->windowSize < 3)
+	if ((!op->windowIsChromosome) && (op->windowSize < 3))
 		{
 		fprintf (stderr, "[%s] WARNING: raising window size from %d to %d\n",
 		                 name, op->windowSize, 3);
 		op->windowSize = 3;
 		}
-
-	if (denomIsWindowSize)
-		op->denominator = op->windowSize;
 
 	return (dspop*) op;
 
@@ -211,12 +215,15 @@ void op_window_sum_apply
 	arg_dont_complain(valtype*	v))
 	{
 	dspop_sum*	op = (dspop_sum*) _op;
-	u32			windowSize     = op->windowSize;
-	valtype		denominator    = op->denominator;
-	valtype		zeroVal        = op->zeroVal;
-	int         useActualDenom = op->useActualDenom;
+	u32			windowSize         = op->windowSize;
+	valtype		denominator        = op->denominator;
+	valtype		zeroVal            = op->zeroVal;
+	int         useActualDenom     = op->useActualDenom;
 	valtype		sum;
 	u32			startIx, endIx, ix, fillIx;
+
+	if (op->windowIsChromosome) windowSize  = vLen;
+	if (op->denomIsWindowSize)  denominator = windowSize;
 
 	sum = 0.0;   // (placate compiler)
 	startIx = 0; // (placate compiler)
