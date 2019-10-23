@@ -599,7 +599,8 @@ help_for_unknown:
 	exit(EXIT_FAILURE);
 
 no_length:
-	fprintf (stderr, "\"%s\" contains no chromosome length\n",
+	fprintf (stderr, "\"%s\" contains no chromosome length\n"
+	                 "(expected \"chromosome:length\" or \"chromosome:start:end\")\n",
 			 arg);
 	exit (EXIT_FAILURE);
 	}
@@ -1458,6 +1459,9 @@ try_again:
 
 	//////////
 	// failure exits
+	//
+	// nota bene: I'd like to report the line's contents with these messages,
+	//            but the line has usually been modified before we get here
 	//////////
 
 missing_eol:
@@ -1471,17 +1475,20 @@ no_chrom:
 	exit (EXIT_FAILURE);
 
 no_start:
-	fprintf (stderr, "problem at line %u, line contains no interval start\n",
+	fprintf (stderr, "problem at line %u, line contains no interval start\n"
+	                 "(expected \"chromosome start end ...\", but there are fewer than 2 fields)\n",
 			 lineNumber);
 	exit (EXIT_FAILURE);
 
 no_end:
-	fprintf (stderr, "problem at line %u, line contains no interval end\n",
+	fprintf (stderr, "problem at line %u, line contains no interval end\n"
+	                 "(expected \"chromosome start end ...\", but there are fewer than 3 fields)\n",
 			 lineNumber);
 	exit (EXIT_FAILURE);
 
 no_value:
-	fprintf (stderr, "problem at line %u, line contains no interval value\n",
+	fprintf (stderr, "problem at line %u, line contains no interval value\n"
+	                 "(expected \"chromosome start end value\", but there are fewer than 4 fields)\n",
 			 lineNumber);
 	exit (EXIT_FAILURE);
 	}
