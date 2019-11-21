@@ -194,8 +194,8 @@ void op_mask_apply
 	char*		filename = op->filename;
 	valtype		maskVal  = op->maskVal;
 	FILE*		f;
-	char		lineBuffer[1000];
-	char		prevChrom[1000];
+	char		lineBuffer[1001];
+	char		prevChrom[1001];
 	valtype*	v = NULL;
 	char*		chrom;
 	spec*		chromSpec;
@@ -253,7 +253,7 @@ void op_mask_apply
 			v = NULL;
 			chromSpec = find_chromosome_spec (chrom);
 			if (chromSpec != NULL) v = chromSpec->valVector;
-			strncpy (prevChrom, chrom, sizeof(prevChrom));
+			strncpy (prevChrom, chrom, sizeof(prevChrom)-1);
 			}
 
 		if (chromSpec == NULL) continue;
@@ -490,8 +490,8 @@ void op_mask_not_apply
 	char*		filename = op->filename;
 	valtype		maskVal  = op->maskVal;
 	FILE*		f;
-	char		lineBuffer[1000];
-	char		prevChrom[1000];
+	char		lineBuffer[1001];
+	char		prevChrom[1001];
 	valtype*	v = NULL;
 	char*		chrom;
 	spec*		chromSpec;
@@ -548,7 +548,7 @@ void op_mask_not_apply
 				if (chromSpec->flag) goto chrom_not_together;
 				}
 
-			strncpy (prevChrom, chrom, sizeof(prevChrom));
+			strncpy (prevChrom, chrom, sizeof(prevChrom)-1);
 			}
 
 		// if the current chromosome is not of any interest, ignore this

@@ -445,8 +445,8 @@ void op_or_apply
 	dspop_or*	op = (dspop_or*) _op;
 	char*			filename = op->filename;
 	FILE*			f;
-	char			lineBuffer[1000];
-	char			prevChrom[1000];
+	char			lineBuffer[1001];
+	char			prevChrom[1001];
 	valtype*		v = NULL;
 	char*			chrom;
 	spec*			chromSpec;
@@ -498,7 +498,7 @@ void op_or_apply
 			v = NULL;
 			chromSpec = find_chromosome_spec (chrom);
 			if (chromSpec != NULL) v = chromSpec->valVector;
-			strncpy (prevChrom, chrom, sizeof(prevChrom));
+			strncpy (prevChrom, chrom, sizeof(prevChrom)-1);
 			}
 
 		if (chromSpec == NULL) continue;
@@ -743,8 +743,8 @@ void op_and_apply
 	dspop_and*	op = (dspop_and*) _op;
 	char*		filename = op->filename;
 	FILE*		f;
-	char		lineBuffer[1000];
-	char		prevChrom[1000];
+	char		lineBuffer[1001];
+	char		prevChrom[1001];
 	valtype*	v = NULL;
 	char*		chrom;
 	spec*		chromSpec;
@@ -811,7 +811,7 @@ void op_and_apply
 				if (chromSpec->flag) goto chrom_not_together;
 				}
 
-			strncpy (prevChrom, chrom, sizeof(prevChrom));
+			strncpy (prevChrom, chrom, sizeof(prevChrom)-1);
 			}
 
 		// if the current chromosome is not of any interest, ignore this

@@ -199,8 +199,8 @@ void op_multiply_apply
 	dspop_multiply*	op = (dspop_multiply*) _op;
 	char*		filename = op->filename;
 	FILE*		f;
-	char		lineBuffer[1000];
-	char		prevChrom[1000];
+	char		lineBuffer[1001];
+	char		prevChrom[1001];
 	valtype*	v = NULL;
 	char*		chrom;
 	spec*		chromSpec;
@@ -260,7 +260,7 @@ void op_multiply_apply
 				if (chromSpec->flag) goto chrom_not_together;
 				}
 
-			strncpy (prevChrom, chrom, sizeof(prevChrom));
+			strncpy (prevChrom, chrom, sizeof(prevChrom)-1);
 			}
 
 		// if the current chromosome is not of any interest, ignore this
@@ -593,8 +593,8 @@ void op_divide_apply
 	char*			filename    = op->filename;
 	valtype			infinityVal = op->infinityVal;
 	FILE*			f;
-	char			lineBuffer[1000];
-	char			prevChrom[1000];
+	char			lineBuffer[1001];
+	char			prevChrom[1001];
 	valtype*		v = NULL;
 	char*			chrom;
 	spec*			chromSpec;
@@ -654,7 +654,7 @@ void op_divide_apply
 				if (chromSpec->flag) goto chrom_not_together;
 				}
 
-			strncpy (prevChrom, chrom, sizeof(prevChrom));
+			strncpy (prevChrom, chrom, sizeof(prevChrom)-1);
 			}
 
 		// if the current chromosome is not of any interest, ignore this

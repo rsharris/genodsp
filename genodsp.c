@@ -705,7 +705,7 @@ static int process_operator_options (int _argc, char** _argv)
 static void read_chromosome_lengths (char* filename)
 	{
 	FILE*	f;
-	char	lineBuffer[1000];
+	char	lineBuffer[1001];
 	u32		lineNumber = 0;
 	int		missingEol = false;
 	int		lineLen;
@@ -1169,8 +1169,8 @@ void read_intervals
 	int			clear,
 	valtype		missingVal)
 	{
-	char		lineBuffer[1000];
-	char		prevChrom[1000];
+	char		lineBuffer[1001];
+	char		prevChrom[1001];
 	valtype*	v = NULL;
 	char*		chrom;
 	spec*		chromSpec;
@@ -1231,7 +1231,7 @@ void read_intervals
 			v = NULL;
 			chromSpec = find_chromosome_spec (chrom);
 			if (chromSpec != NULL) v = chromSpec->valVector;
-			strncpy (prevChrom, chrom, sizeof(prevChrom));
+			strncpy (prevChrom, chrom, sizeof(prevChrom)-1);
 			}
 
 		if (chromSpec == NULL) continue;

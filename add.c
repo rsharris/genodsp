@@ -197,8 +197,8 @@ void op_add_apply
 	dspop_add*	op = (dspop_add*) _op;
 	char*		filename = op->filename;
 	FILE*		f;
-	char		lineBuffer[1000];
-	char		prevChrom[1000];
+	char		lineBuffer[1001];
+	char		prevChrom[1001];
 	valtype*	v = NULL;
 	char*		chrom;
 	spec*		chromSpec;
@@ -240,7 +240,7 @@ void op_add_apply
 			v = NULL;
 			chromSpec = find_chromosome_spec (chrom);
 			if (chromSpec != NULL) v = chromSpec->valVector;
-			strncpy (prevChrom, chrom, sizeof(prevChrom));
+			strncpy (prevChrom, chrom, sizeof(prevChrom)-1);
 			}
 
 		if (chromSpec == NULL) continue;
@@ -490,8 +490,8 @@ void op_subtract_apply
 	dspop_subtract*	op = (dspop_subtract*) _op;
 	char*			filename = op->filename;
 	FILE*			f;
-	char			lineBuffer[1000];
-	char			prevChrom[1000];
+	char			lineBuffer[1001];
+	char			prevChrom[1001];
 	valtype*		v = NULL;
 	char*			chrom;
 	spec*			chromSpec;
@@ -533,7 +533,7 @@ void op_subtract_apply
 			v = NULL;
 			chromSpec = find_chromosome_spec (chrom);
 			if (chromSpec != NULL) v = chromSpec->valVector;
-			strncpy (prevChrom, chrom, sizeof(prevChrom));
+			strncpy (prevChrom, chrom, sizeof(prevChrom)-1);
 			}
 
 		if (chromSpec == NULL) continue;
