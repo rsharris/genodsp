@@ -844,7 +844,7 @@ int main
 		chromSpec = chromsSorted[chromIx];
 
 		if (trackOperations)
-			tracking_report ("allocate(%s / %s bytes)",
+			tracking_report ("allocate(%s / %s bytes)\n",
 			                  chromSpec->chrom, ucommatize(chromSpec->length));
 
 		chromSpec->valVector = (valtype*) calloc (chromSpec->length, sizeof(valtype));
@@ -906,7 +906,7 @@ int main
 			op = stopOp;
 
 			if (trackOperations)
-				tracking_report ("%s(*)", op->name);
+				tracking_report ("%s(*)\n", op->name);
 			(*op->funcApply) (op, "*", maxLength, NULL);
 			firstOp = stopOp->next;
 			}
@@ -1238,7 +1238,7 @@ void read_intervals
 
 		if ((trackOperations) && (!chromSpec->flag))
 			{
-			tracking_report ("input(%s)", chrom);
+			tracking_report ("input(%s)\n", chrom);
 			chromSpec->flag = true;
 			}
 
@@ -1542,7 +1542,7 @@ void report_intervals
 		v = chromSpec->valVector;
 
 		if (trackOperations)
-			tracking_report ("output(%s)", chromSpec->chrom);
+			tracking_report ("output(%s)\n", chromSpec->chrom);
 
 		active = (showUncovered != uncovered_hide);
 
