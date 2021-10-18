@@ -1976,7 +1976,7 @@ void op_min_with_apply
 			if (adjEnd   >= chromSpec->length) adjEnd = chromSpec->length;
 			}
 
-		// add over this interval
+		// minimize over this interval
 
 		for (ix=adjStart ; ix<adjEnd ; ix++)
 			{ if (val < v[ix]) v[ix] = val; }
@@ -2262,7 +2262,7 @@ void op_max_with_apply
 			if (adjEnd   >= chromSpec->length) adjEnd = chromSpec->length;
 			}
 
-		// add over this interval
+		// maximize over this interval
 
 		for (ix=adjStart ; ix<adjEnd ; ix++)
 			{ if (val > v[ix]) v[ix] = val; }
