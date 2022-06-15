@@ -18,7 +18,7 @@ char* programName = "genodsp";
 
 #define programVersionMajor    "0"
 #define programVersionMinor    "0"
-#define programVersionSubMinor "6"
+#define programVersionSubMinor "7"
 #define programRevisionDate    "20220615"
 
 // dsp operators
@@ -245,6 +245,7 @@ static void usage (char* message)
 	fprintf (stderr, "  --report=comments         copy comments from the input to stderr. Comments\n");
 	fprintf (stderr, "                            are lines beginning with a \"#\". This can be\n");
 	fprintf (stderr, "                            helpful in tracking progress during a long run.\n");
+	fprintf (stderr, "  --progress=input:<n>      report processing of every nth input line\n");
 	fprintf (stderr, "  --progress=operations     report each operation as it begins\n");
 	fprintf (stderr, "  --version                 report the program version and quit\n");
 	fprintf (stderr, "\n");
@@ -513,9 +514,21 @@ static void parse_options (int _argc, char** _argv)
 			exit (EXIT_SUCCESS);
 			}
 
+		// --report=comments
+
 		if ((strcmp (arg, "--report=comments") == 0)
 		 || (strcmp (arg, "--report:comments") == 0))
 			{ reportComments = true;  goto next_arg; }
+
+		// --report=progress=input:<n>
+
+		if ((strcmp_prefix (arg, "--progress=input:") == 0)
+		 || (strcmp_prefix (arg, "--progress:input=") == 0)
+		 || (strcmp_prefix (arg, "--progress:input:") == 0))
+			{
+			reportInputProgress = string_to_unitized_int (argVal, /*thousands*/ true);
+			goto next_arg;
+			}
 
 		// --progress
 
@@ -1380,6 +1393,7 @@ int read_interval
 	{
 	static u32	lineNumber = 0;
 	static int	missingEol = false;
+	int			reportProgressNow;
 	int			lineLen;
 	char*		scan, *mark, *field;
 	int			col;
@@ -1415,15 +1429,27 @@ try_again:
 
 	// parse the line
 
+	reportProgressNow = ((reportInputProgress != 0)
+	                  && ((lineNumber == 1) || (lineNumber % reportInputProgress == 0)));
+
 	scan = skip_whitespace(buffer);
-	if (*scan == 0)   goto try_again;  // empty line
+	if (*scan == 0)                    // empty line
+		{
+		if (reportProgressNow)
+			fprintf (stderr, "progress: input line %u\n", lineNumber);
+		goto try_again;
+		}
 	if (*scan == '#')                  // comment line
 		{
 		if (reportComments)
-			fprintf (stderr, "input line %u: %s", // (we assume the line ends with a newline)
-			         lineNumber,scan);
+			fprintf (stderr, "input line %u: %s", lineNumber,scan);
+		else if (reportProgressNow)
+			fprintf (stderr, "progress: input line %u\n", lineNumber);
 		goto try_again;
 		}
+
+	if (reportProgressNow)
+		fprintf (stderr, "progress: input line %u\n", lineNumber);
 
 	chrom = scan = buffer;
 	if (*scan == ' ') goto no_chrom;

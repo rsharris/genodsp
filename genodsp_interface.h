@@ -139,9 +139,11 @@ typedef struct dspinfo
 #ifdef globals_owner
 global int trackOperations  = false;
 global int reportComments   = false;
+global u32 reportInputProgress = 0;
 #else
 global int trackOperations;
 global int reportComments;
+global u32 reportInputProgress;
 #endif
 
 // values for showUncovered
