@@ -18,8 +18,8 @@ char* programName = "genodsp";
 
 #define programVersionMajor    "0"
 #define programVersionMinor    "0"
-#define programVersionSubMinor "5"
-#define programRevisionDate    "20190815"
+#define programVersionSubMinor "6"
+#define programRevisionDate    "20220615"
 
 // dsp operators
 
@@ -242,6 +242,9 @@ static void usage (char* message)
 	fprintf (stderr, "  --help[=<operator>]       get detail about a particular operator\n");
 	fprintf (stderr, "  ?                         list available operators with brief descriptions\n");
 	fprintf (stderr, "  ?<operator>               same as --help=<operator>\n");
+	fprintf (stderr, "  --report=comments         copy comments from the input to stderr. Comments\n");
+	fprintf (stderr, "                            are lines beginning with a \"#\". This can be\n");
+	fprintf (stderr, "                            helpful in tracking progress during a long run.\n");
 	fprintf (stderr, "  --progress=operations     report each operation as it begins\n");
 	fprintf (stderr, "  --version                 report the program version and quit\n");
 	fprintf (stderr, "\n");
@@ -510,9 +513,14 @@ static void parse_options (int _argc, char** _argv)
 			exit (EXIT_SUCCESS);
 			}
 
+		if ((strcmp (arg, "--report=comments") == 0)
+		 || (strcmp (arg, "--report:comments") == 0))
+			{ reportComments = true;  goto next_arg; }
+
 		// --progress
 
 		if ((strcmp (arg, "--progress=operations") == 0)
+		 || (strcmp (arg, "--progress:operations") == 0)
 		 || (strcmp (arg, "--debug=operations")    == 0))  // backward compatibility
 			{ trackOperations = true;  goto next_arg; }
 
@@ -1409,7 +1417,13 @@ try_again:
 
 	scan = skip_whitespace(buffer);
 	if (*scan == 0)   goto try_again;  // empty line
-	if (*scan == '#') goto try_again;  // comment line
+	if (*scan == '#')                  // comment line
+		{
+		if (reportComments)
+			fprintf (stderr, "input line %u: %s", // (we assume the line ends with a newline)
+			         lineNumber,scan);
+		goto try_again;
+		}
 
 	chrom = scan = buffer;
 	if (*scan == ' ') goto no_chrom;

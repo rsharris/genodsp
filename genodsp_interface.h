@@ -138,8 +138,10 @@ typedef struct dspinfo
 
 #ifdef globals_owner
 global int trackOperations  = false;
+global int reportComments   = false;
 #else
 global int trackOperations;
+global int reportComments;
 #endif
 
 // values for showUncovered
