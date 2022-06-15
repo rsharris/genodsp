@@ -526,6 +526,8 @@ static void parse_options (int _argc, char** _argv)
 		 || (strcmp_prefix (arg, "--progress:input=") == 0)
 		 || (strcmp_prefix (arg, "--progress:input:") == 0))
 			{
+			if (strcmp_prefix (argVal, "input:") == 0)
+				argVal = strchr(arg,':') + 1;
 			reportInputProgress = string_to_unitized_int (argVal, /*thousands*/ true);
 			goto next_arg;
 			}
