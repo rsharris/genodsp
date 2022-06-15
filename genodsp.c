@@ -18,7 +18,7 @@ char* programName = "genodsp";
 
 #define programVersionMajor    "0"
 #define programVersionMinor    "0"
-#define programVersionSubMinor "8"
+#define programVersionSubMinor "9"
 #define programRevisionDate    "20220615"
 
 // dsp operators
@@ -1381,8 +1381,6 @@ chrom_too_short:
 //     .. reset_read_interval;  note that this is called from several op routines
 //     .. in addition to read_intervals()
 
-// $$$ also add an option to report "progress" to the user
-
 int read_interval
    (FILE*		f,
 	char*		buffer,
@@ -1438,20 +1436,20 @@ try_again:
 	if (*scan == 0)                    // empty line
 		{
 		if (reportProgressNow)
-			fprintf (stderr, "progress: input line %u\n", lineNumber);
+			fprintf (stderr, "progress: input line %s\n", ucommatize(lineNumber));
 		goto try_again;
 		}
 	if (*scan == '#')                  // comment line
 		{
 		if (reportComments)
-			fprintf (stderr, "input line %u: %s", lineNumber,scan);
+			fprintf (stderr, "input line %s: %s", ucommatize(lineNumber),scan);
 		else if (reportProgressNow)
-			fprintf (stderr, "progress: input line %u\n", lineNumber);
+			fprintf (stderr, "progress: input line %s\n", ucommatize(lineNumber));
 		goto try_again;
 		}
 
 	if (reportProgressNow)
-		fprintf (stderr, "progress: input line %u\n", lineNumber);
+		fprintf (stderr, "progress: input line %s\n", ucommatize(lineNumber));
 
 	chrom = scan = buffer;
 	if (*scan == ' ') goto no_chrom;
