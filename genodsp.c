@@ -1391,7 +1391,7 @@ int read_interval
 	u32*		_end,
 	valtype*	_val)
 	{
-	static u32	lineNumber = 0;
+	static u32	lineNumber = 0;            // $$$ this should be u64
 	static int	missingEol = false;
 	int			reportProgressNow;
 	int			lineLen;
