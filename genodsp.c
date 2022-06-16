@@ -18,8 +18,8 @@ char* programName = "genodsp";
 
 #define programVersionMajor    "0"
 #define programVersionMinor    "0"
-#define programVersionSubMinor "9"
-#define programRevisionDate    "20220615"
+#define programVersionSubMinor "10"
+#define programRevisionDate    "20220616"
 
 // dsp operators
 
@@ -1391,9 +1391,9 @@ int read_interval
 	u32*		_end,
 	valtype*	_val)
 	{
-	static u32	lineNumber = 0;            // $$$ this should be u64
-	static int	missingEol = false;
-	int			reportProgressNow;
+	static u64	lineNumber = 0;			// u64 allows for an input stream that
+	static int	missingEol = false;		// .. consists of several files, each
+	int			reportProgressNow;		// .. covering a whole genome
 	int			lineLen;
 	char*		scan, *mark, *field;
 	int			col;
@@ -1505,31 +1505,31 @@ try_again:
 	//////////
 
 missing_eol:
-	fprintf (stderr, "problem at line %u, line is longer than internal buffer\n",
-			 lineNumber-1);
+	fprintf (stderr, "problem at line %s, line is longer than internal buffer\n",
+			 ucommatize(lineNumber-1));
 	exit (EXIT_FAILURE);
 
 no_chrom:
-	fprintf (stderr, "problem at line %u, line contains no chromosome or begins with whitespace\n",
-			 lineNumber);
+	fprintf (stderr, "problem at line %s, line contains no chromosome or begins with whitespace\n",
+			 ucommatize(lineNumber));
 	exit (EXIT_FAILURE);
 
 no_start:
-	fprintf (stderr, "problem at line %u, line contains no interval start\n"
+	fprintf (stderr, "problem at line %s, line contains no interval start\n"
 	                 "(expected \"chromosome start end ...\", but there are fewer than 2 fields)\n",
-			 lineNumber);
+			 ucommatize(lineNumber));
 	exit (EXIT_FAILURE);
 
 no_end:
-	fprintf (stderr, "problem at line %u, line contains no interval end\n"
+	fprintf (stderr, "problem at line %s, line contains no interval end\n"
 	                 "(expected \"chromosome start end ...\", but there are fewer than 3 fields)\n",
-			 lineNumber);
+			 ucommatize(lineNumber));
 	exit (EXIT_FAILURE);
 
 no_value:
-	fprintf (stderr, "problem at line %u, line contains no interval value\n"
+	fprintf (stderr, "problem at line %s, line contains no interval value\n"
 	                 "(expected \"chromosome start end value\", but there are fewer than 4 fields)\n",
-			 lineNumber);
+			 ucommatize(lineNumber));
 	exit (EXIT_FAILURE);
 	}
 

@@ -32,7 +32,7 @@ int    try_string_to_double   (const char* s, double* v);
 char*  skip_whitespace        (char* s);
 char*  skip_darkspace         (char* s);
 char*  duration_to_string     (float seconds);
-char*  ucommatize             (const u32 v);  // $$$ should be u64
+char*  ucommatize             (const u64 v);
 
 // miscellany
 

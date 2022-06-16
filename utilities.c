@@ -480,7 +480,9 @@ char* duration_to_string
 //----------
 //
 // Arguments:
-//	const u32 v:	The number to convert.  $$$ should be u64
+//	const u64 v:	The number to convert. Note that the actual supported
+//					range is 63 bits (because, internally, we convert to signed
+//					int).
 //
 // Returns:
 //	A string representing that number, including commas.  (see note 1)
@@ -497,7 +499,7 @@ char* duration_to_string
 //----------
 
 char* ucommatize
-   (const u32	v)  // $$$ should be u64
+   (const u64	v)
 	{
 	static char	 s1[52];// (big enough for 128-bit decimal value with commas,
 	static char	 s2[52];//  .. the biggest being
