@@ -540,3 +540,17 @@ char* ucommatize
 	return s;
 	}
 
+
+void safe_strncpy
+   (char *dest, const char *src, size_t n)
+    {
+    #pragma GCC diagnostic push
+    #pragma GCC diagnostic ignored "-Wstringop-truncation"
+    strncpy(dest, src, n);
+    #pragma GCC diagnostic pop
+    if (n > 0)
+        {
+        dest[n-1] = '\0';  // Ensure null-termination
+        }
+    }
+

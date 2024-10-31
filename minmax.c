@@ -261,7 +261,7 @@ void op_min_in_interval_apply
 				if (chromSpec->flag) goto chrom_not_together;
 				}
 
-			strncpy (prevChrom, chrom, sizeof(prevChrom)-1);
+			safe_strncpy (prevChrom, chrom, sizeof(prevChrom)-1);
 			}
 
 		// if the current chromosome is not of any interest, ignore this
@@ -664,7 +664,7 @@ void op_max_in_interval_apply
 				if (chromSpec->flag) goto chrom_not_together;
 				}
 
-			strncpy (prevChrom, chrom, sizeof(prevChrom)-1);
+			safe_strncpy (prevChrom, chrom, sizeof(prevChrom)-1);
 			}
 
 		// if the current chromosome is not of any interest, ignore this
@@ -1941,7 +1941,7 @@ void op_min_with_apply
 			v = NULL;
 			chromSpec = find_chromosome_spec (chrom);
 			if (chromSpec != NULL) v = chromSpec->valVector;
-			strncpy (prevChrom, chrom, sizeof(prevChrom)-1);
+			safe_strncpy (prevChrom, chrom, sizeof(prevChrom)-1);
 			}
 
 		if (chromSpec == NULL) continue;
@@ -2227,7 +2227,7 @@ void op_max_with_apply
 			v = NULL;
 			chromSpec = find_chromosome_spec (chrom);
 			if (chromSpec != NULL) v = chromSpec->valVector;
-			strncpy (prevChrom, chrom, sizeof(prevChrom)-1);
+			safe_strncpy (prevChrom, chrom, sizeof(prevChrom)-1);
 			}
 
 		if (chromSpec == NULL) continue;

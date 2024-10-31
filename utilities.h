@@ -33,6 +33,8 @@ char*  skip_whitespace        (char* s);
 char*  skip_darkspace         (char* s);
 char*  duration_to_string     (float seconds);
 char*  ucommatize             (const u64 v);
+void   safe_strncpy           (char *dest, const char *src, size_t n);
+
 
 // miscellany
 

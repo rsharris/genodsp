@@ -260,7 +260,7 @@ void op_multiply_apply
 				if (chromSpec->flag) goto chrom_not_together;
 				}
 
-			strncpy (prevChrom, chrom, sizeof(prevChrom)-1);
+			safe_strncpy (prevChrom, chrom, sizeof(prevChrom)-1);
 			}
 
 		// if the current chromosome is not of any interest, ignore this
@@ -654,7 +654,7 @@ void op_divide_apply
 				if (chromSpec->flag) goto chrom_not_together;
 				}
 
-			strncpy (prevChrom, chrom, sizeof(prevChrom)-1);
+			safe_strncpy (prevChrom, chrom, sizeof(prevChrom)-1);
 			}
 
 		// if the current chromosome is not of any interest, ignore this
