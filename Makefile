@@ -1,5 +1,4 @@
 CFLAGS = -O3 -Wall -Wextra -Werror
-CC     = gcc
 LDLIBS = -lm
 
 operators = sum clump percentile add multiply mask logical minmax morphology map opio variables
