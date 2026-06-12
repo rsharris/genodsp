@@ -284,8 +284,8 @@ int string_to_unitized_int
 
 	if (isFloat)
 		{
-		if ((vf > 0) && ( vf*mult > INT_MAX)) goto overflow;
-		if ((vf < 0) && (-vf*mult > INT_MAX)) goto overflow;
+		if ((vf > 0) && ( ((double)vf)*mult > INT_MAX)) goto overflow;
+		if ((vf < 0) && (-((double)vf)*mult > INT_MAX)) goto overflow;
 		v = (vf * mult) + .5;
 		}
 	else if (mult != 1)
@@ -544,10 +544,15 @@ char* ucommatize
 void safe_strncpy
    (char *dest, const char *src, size_t n)
     {
-    #pragma GCC diagnostic push
-    #pragma GCC diagnostic ignored "-Wstringop-truncation"
+#if defined(__GNUC__) && !defined(__clang__)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wstringop-truncation"
+#endif
+
     strncpy(dest, src, n);
-    #pragma GCC diagnostic pop
+#if defined(__GNUC__) && !defined(__clang__)
+#pragma GCC diagnostic pop
+#endif
     if (n > 0)
         {
         dest[n-1] = '\0';  // Ensure null-termination
